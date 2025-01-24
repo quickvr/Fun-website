@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive RGB Background</title>
+    <title>Fluid RGB Background</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background: linear-gradient(90deg, #1e3c72, #2a5298);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: #000;
         }
 
         canvas {
@@ -29,57 +26,62 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // Function to generate a random RGB color
-        function getRandomColor() {
-            const r = Math.floor(Math.random() * 256);
-            const g = Math.floor(Math.random() * 256);
-            const b = Math.floor(Math.random() * 256);
-            return `rgba(${r}, ${g}, ${b}, 0.5)`;
-        }
+        const particles = [];
+        const numParticles = 500;
 
-        // React to mouse movement
-        window.addEventListener('mousemove', (e) => {
-            const x = e.clientX;
-            const y = e.clientY;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = getRandomColor();
-            ctx.beginPath();
-            ctx.arc(x, y, 50, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        // React to sound
-        navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const analyser = audioContext.createAnalyser();
-            const microphone = audioContext.createMediaStreamSource(stream);
-            microphone.connect(analyser);
-
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-            function animateSound() {
-                analyser.getByteFrequencyData(dataArray);
-                const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-
-                ctx.fillStyle = `rgba(${average * 2}, 100, 255, 0.5)`;
-                ctx.beginPath();
-                ctx.arc(canvas.width / 2, canvas.height / 2, average / 2, 0, Math.PI * 2);
-                ctx.fill();
-
-                requestAnimationFrame(animateSound);
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 10 + 5;
+                this.speedX = Math.random() * 2 - 1; // Random speed in x direction
+                this.speedY = Math.random() * 2 - 1; // Random speed in y direction
+                this.color = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.5)`;
             }
 
-            animateSound();
-        }).catch((err) => {
-            console.error('Microphone access denied:', err);
-        });
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
 
-        // Resize canvas on window resize
+                // Change direction when hitting canvas edges
+                if (this.x + this.size > canvas.width || this.x - this.size < 0) {
+                    this.speedX *= -1;
+                }
+                if (this.y + this.size > canvas.height || this.y - this.size < 0) {
+                    this.speedY *= -1;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let particle of particles) {
+                particle.update();
+                particle.draw();
+            }
+            requestAnimationFrame(animate);
+        }
+
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         });
+
+        init();
+        animate();
     </script>
 </body>
 </html>
