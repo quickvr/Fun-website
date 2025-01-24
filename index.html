@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fluid RGB Background</title>
+    <title>Dynamic Fluid Background</title>
     <style>
         body {
             margin: 0;
@@ -27,16 +27,24 @@
         canvas.height = window.innerHeight;
 
         const particles = [];
-        const numParticles = 500;
+        const numParticles = 300;
 
         class Particle {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.size = Math.random() * 10 + 5;
-                this.speedX = Math.random() * 2 - 1; // Random speed in x direction
-                this.speedY = Math.random() * 2 - 1; // Random speed in y direction
-                this.color = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.5)`;
+                this.size = Math.random() * 5 + 2;
+                this.speedX = (Math.random() - 0.5) * 2; // Random speed in x direction
+                this.speedY = (Math.random() - 0.5) * 2; // Random speed in y direction
+                this.color = this.randomColor();
+                this.history = [];
+            }
+
+            randomColor() {
+                const r = Math.floor(Math.random() * 255);
+                const g = Math.floor(Math.random() * 255);
+                const b = Math.floor(Math.random() * 255);
+                return `rgba(${r}, ${g}, ${b}, 0.8)`;
             }
 
             update() {
@@ -50,13 +58,24 @@
                 if (this.y + this.size > canvas.height || this.y - this.size < 0) {
                     this.speedY *= -1;
                 }
+
+                // Store history for trailing effect
+                this.history.push({ x: this.x, y: this.y });
+                if (this.history.length > 10) {
+                    this.history.shift();
+                }
             }
 
             draw() {
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
+                ctx.moveTo(this.history[0].x, this.history[0].y);
+                for (let i = 0; i < this.history.length; i++) {
+                    ctx.lineTo(this.history[i].x, this.history[i].y);
+                }
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.size;
+                ctx.lineCap = 'round';
+                ctx.stroke();
             }
         }
 
